@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.github.BackCamino.EthereumThermostat</groupId>
+  <artifactId>bpmn2sol</artifactId>
+  <versioning>
+    <versions>
+      <version>1.0-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20200824180919</lastUpdated>
+  </versioning>
+</metadata>
