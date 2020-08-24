@@ -9,7 +9,6 @@ import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -27,7 +26,10 @@ public class ThermostatService {
 
     public BpmnModelInstance getThermostatDiagram(int rooms) throws IOException {
         if (rooms < 1) throw new IllegalArgumentException("Rooms must be greater than zero");
-        InputStream filteredInputStream = new ReplacingInputStream(new FileInputStream(getClass().getClassLoader().getResource(THERMOSTAT_MODEL_FILE).getFile()), "___ROOMS___", new Integer(rooms).toString());
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        InputStream resourceAsStream = classLoader.getResourceAsStream(THERMOSTAT_MODEL_FILE);
+        InputStream filteredInputStream = new ReplacingInputStream(resourceAsStream, "___ROOMS___", new Integer(rooms).toString());
+        //InputStream filteredInputStream = new ReplacingInputStream(new FileInputStream(getClass().getClassLoader().getResource(THERMOSTAT_MODEL_FILE).getFile()), "___ROOMS___", new Integer(rooms).toString());
         return Bpmn.readModelFromStream(filteredInputStream);
     }
 
