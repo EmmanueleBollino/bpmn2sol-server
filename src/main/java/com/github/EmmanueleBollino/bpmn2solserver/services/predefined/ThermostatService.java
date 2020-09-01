@@ -2,7 +2,7 @@ package com.github.EmmanueleBollino.bpmn2solserver.services.predefined;
 
 import com.github.BackCamino.EthereumThermostat.bpmn2sol.translators.ChoreographyTranslator;
 import com.github.EmmanueleBollino.bpmn2solserver.services.CompileService;
-import com.github.EmmanueleBollino.solcraft.soliditycomponents.SolidityFile;
+import com.github.EmmanueleBollino.solcraft.soliditycomponents.*;
 import org.apache.poi.util.ReplacingInputStream;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.List;
 
 @Service
 public class ThermostatService {
@@ -21,7 +22,21 @@ public class ThermostatService {
     private CompileService compileService;
 
     public SolidityFile getThermostatContract(int rooms) {
-        return new ChoreographyTranslator(getThermostatDiagram(rooms)).translate();
+        if (rooms == 1) {
+            SolidityFile translated = new ChoreographyTranslator(getThermostatDiagram(2)).translate();
+            Contract thermostat = (Contract) translated.getComponents().stream().filter(el -> el instanceof Contract).map(el -> (Contract) el).filter(el -> el.getName().equals("Thermostat")).findFirst().orElseThrow();
+
+            List<Statement> constructorStatements = thermostat.getConstructor().getStatements().subList(0, 3);
+            constructorStatements.add(new Statement("isReady();"));
+            Constructor newConstructor = new Constructor("Thermostat", Visibility.PUBLIC, List.of(), constructorStatements);
+            thermostat.setConstructor(newConstructor);
+
+            thermostat.getAttributes().stream().filter(el -> el.getName().equals("associations")).findFirst().orElseThrow().setType(new Type("Association[1]"));
+            thermostat.getAttributes().stream().filter(el -> el.getName().equals("heaterValues")).findFirst().orElseThrow().setType(new Type("HeaterValues[1]"));
+            thermostat.getAttributes().stream().filter(el -> el.getName().equals("sensorValues")).findFirst().orElseThrow().setType(new Type("SensorValues[1]"));
+
+            return translated;
+        } else return new ChoreographyTranslator(getThermostatDiagram(rooms)).translate();
     }
 
     public BpmnModelInstance getThermostatDiagram(int rooms) {
