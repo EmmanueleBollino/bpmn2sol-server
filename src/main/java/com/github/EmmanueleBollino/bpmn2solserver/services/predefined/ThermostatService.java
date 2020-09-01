@@ -20,17 +20,27 @@ public class ThermostatService {
     @Autowired
     private CompileService compileService;
 
-    public SolidityFile getThermostatContract(int rooms) throws IOException {
+    public SolidityFile getThermostatContract(int rooms) {
         return new ChoreographyTranslator(getThermostatDiagram(rooms)).translate();
     }
 
-    public BpmnModelInstance getThermostatDiagram(int rooms) throws IOException {
+    public BpmnModelInstance getThermostatDiagram(int rooms) {
         if (rooms < 1) throw new IllegalArgumentException("Rooms must be greater than zero");
+
+        //building association string
+        StringBuilder associations = new StringBuilder();
+        for (int i = 0; i < rooms; i++) {
+            associations.append("[").append(i).append(",").append(i).append("]").append(";");
+        }
+        associations.setLength(associations.length() - 1);
+
+        //replacing parameters in diagram
         ClassLoader classLoader = this.getClass().getClassLoader();
         InputStream resourceAsStream = classLoader.getResourceAsStream(THERMOSTAT_MODEL_FILE);
-        InputStream filteredInputStream = new ReplacingInputStream(resourceAsStream, "___ROOMS___", new Integer(rooms).toString());
-        //InputStream filteredInputStream = new ReplacingInputStream(new FileInputStream(getClass().getClassLoader().getResource(THERMOSTAT_MODEL_FILE).getFile()), "___ROOMS___", new Integer(rooms).toString());
-        return Bpmn.readModelFromStream(filteredInputStream);
+        InputStream filteredInputStreamRooms = new ReplacingInputStream(resourceAsStream, "___ROOMS___", Integer.toString(rooms));
+        InputStream filteredInputStreamAssociations = new ReplacingInputStream(filteredInputStreamRooms, "___ASSOCIATIONS___", associations.toString());
+
+        return Bpmn.readModelFromStream(filteredInputStreamAssociations);
     }
 
     public String getThermostatCompiled(int rooms) throws InterruptedException, IOException, URISyntaxException {
